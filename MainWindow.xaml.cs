@@ -24,8 +24,10 @@ namespace Sudoku_Solver_GUI
     public partial class MainWindow : Window
     {
         Solver puz = new Solver();
+        //Solver class has a boolean nested array that will be used to check the numbers,
+        //and various methods that will help solve and manipulate the sudoku puzzle.
         int[] sudokuNums = new int[81];
-
+        // sudokuNums is an array of integer the main class holds to track and display the solution
         public MainWindow()
         {
             InitializeComponent();
@@ -35,6 +37,9 @@ namespace Sudoku_Solver_GUI
 
         private void open(object sender, RoutedEventArgs e)
         {
+            //this function asks to choose file that has been saved from this program,
+            //and it will load the sequence of numbers to the sudoku puzzle.
+            //as well as display it.
             string sequence = "";
             OpenFileDialog openfile = new OpenFileDialog();
             if (openfile.ShowDialog() == true && openfile.CheckFileExists)
@@ -47,15 +52,19 @@ namespace Sudoku_Solver_GUI
                 }
                 DisplayNums(sudokuNums);
             }
+            //still have to work on exceptions.
         }
 
         private void Save(object sender, RoutedEventArgs e)
         {
+            //self explanatory. This function saves the sequence of numbers : sudokuNums
             puz.Save(sudokuNums);
         }
 
         private void Clear(object sender, RoutedEventArgs e)
         {
+            //this function will actually input blank to every cells, triggering WriteNum function of
+            //Solver to erase the corresponding number from the program
             foreach (UIElement child in table.Children)
             {
                 if (child is TextBox)
@@ -69,6 +78,7 @@ namespace Sudoku_Solver_GUI
 
         private void Solve(object sender, RoutedEventArgs e)
         {
+            //Refer to the function Solve of Solver class
             puz = new Solver(sudokuNums);
             int[] sol = puz.Solve(0);
             DisplayNums(sol);
@@ -76,6 +86,8 @@ namespace Sudoku_Solver_GUI
 
         private void Hint(object sender, RoutedEventArgs e)
         {
+            //This function is intended to give you the sequence the computer followed to
+            //solve the puzzle
             puz = new Solver(sudokuNums);
             int[] hint = puz.Solve(1);
             DisplayNums(hint, 0);
@@ -83,6 +95,9 @@ namespace Sudoku_Solver_GUI
 
         private void UpdateNum(object sender, TextChangedEventArgs e)
         {
+            //This function is triggered by text change in the GUI.
+            //It will validate the input text and put it in the sudokuNums array.
+            //The updated number will be sent to the Solver when Solve or Hint is called.
             TextBox TB = sender as TextBox;
             int row_index_in_table = Grid.GetRow(TB);
             int column_index_in_table = Grid.GetColumn(TB);
@@ -107,8 +122,10 @@ namespace Sudoku_Solver_GUI
         }
 
         private void DisplayNums(int[] solutions, int mode = 0)
-
         {
+            //I am not sure what I was trying to do with this function
+            //but it seems like case0 just scans the input array and
+            //display(update) on the grid.
             switch (mode)
             {
 
@@ -137,7 +154,6 @@ namespace Sudoku_Solver_GUI
     {
 
         public bool[,,,,] Puzzle = new bool[3, 3, 3, 3, 10];//[ Zone_x , Zone_y , Index_x , Index_y , Memo(index 0 : Number determined index, index 1~9 : which number is probable or not)]
-
         public Solver()
             : this(new int[81])
         {
@@ -170,7 +186,7 @@ namespace Sudoku_Solver_GUI
                 }
             }
         }
-
+        //these functions produce zones coordinates and index coordinates from full index
         private int x_a(int index)
         {
             return (index % 9) / 3;
@@ -188,8 +204,10 @@ namespace Sudoku_Solver_GUI
             return (index / 9) % 3;
         }
 
+        
         private bool Isin(int[] list, int theNum)
         {
+            //This function checks whether there is theNum in the list or not
             int i = 0;
             while (i < list.Length - 1 && list[i] != theNum)
             {
@@ -199,8 +217,11 @@ namespace Sudoku_Solver_GUI
                 return true;
             return false;
         }
+
         public int[] Solve(int options)
         {
+            //this function basically just repeats MarkHiddenDef and Markonly
+            //for a set amount of times
             if (options == 0)
             {
 
@@ -216,35 +237,51 @@ namespace Sudoku_Solver_GUI
                 }
                 return sol;
             }
+
+            //Another intention is to log the cells it solves during the solution
+            //and inform the user with the sequence.
             else
             {
                 int[] solsequence = new int[81];
                 for (int temp = 0; temp < 81; temp++)
                 {
-                    solsequence[temp] = ReadNum(temp % 9, temp / 9);
+                    solsequence[temp] = (ReadNum(temp % 9, temp / 9) == 0) ? 0 : 81;
                 }
                 int[] seq1;
                 int[] seq2;
                 int i = 1;
                 int j;
                 int k;
-                for (byte scan = 0; scan < 10; scan++)
+                int x;
+                for (byte itr = 0; itr < 10; itr++)
                 {
-                    j = k = 0;
+                    j = 0;
+                    k = 0;
                     seq1 = MarkHiddenDef();
                     seq2 = MarkOnly();
-                    while (seq1[j] != 0 && !Isin(solsequence, seq1[j]))
+                    while (seq1[j] != 0 )
                     {
-                        solsequence[seq1[j]] = i;
-                        i++;
+                        if (solsequence[seq1[j]]==0 && solsequence[seq1[j]] == 81)
+                        {
+                            solsequence[seq1[j]] = i;
+                            i++;
+                        }
                         j++;
                     }
-                    while (seq2[k] != 0 && Isin(solsequence, seq1[k]))
+                    while (seq2[k] != 0 )
                     {
-                        solsequence[seq1[k]] = i;
-                        i++;
+                        if (solsequence[seq2[k]]== 0 && solsequence[seq1[j]] == 81)
+                        {
+                            solsequence[seq2[k]] = i;
+                            i++;
+                        }
                         k++;
                     }
+                }
+                for (int scan = 0; scan < 81; scan++)
+                {
+                    x = solsequence[scan];
+                    solsequence[scan] = (x == 81) ? 0 : x;
                 }
                 return solsequence;
             }
@@ -455,21 +492,32 @@ namespace Sudoku_Solver_GUI
 
                     if (aTruesum == 1)
                     {
-                        WriteNum((index % 3 * 3) + (aMemory % 3), (index / 3 * 3) + (aMemory / 3), num);
-                        sequence[j] = (index % 3 * 3) + (aMemory % 3) + ((index / 3 * 3) + (aMemory / 3)) * 9;
-                        j++;
+                        int xcor = (index % 3 * 3) + (aMemory % 3);
+                        int ycor = (index / 3 * 3) + (aMemory / 3);
+                        WriteNum(xcor, ycor, num);
+                        if (!Isin(sequence, xcor + ycor * 9))
+                        {
+                            sequence[j] = xcor + ycor * 9;
+                            j++;
+                        }
                     }
                     else if (rTruesum == 1)
                     {
                         WriteNum(rMemory, index, num);
-                        sequence[j] = rMemory + index * 9;
-                        j++;
+                        if (!Isin(sequence, rMemory + index * 9))
+                        {
+                            sequence[j] = rMemory + index * 9;
+                            j++;
+                        }
                     }
                     else if (cTruesum == 1)
                     {
                         WriteNum(index, cMemory, num);
-                        sequence[j] = index + cMemory * 9;
-                        j++;
+                        if (!Isin(sequence, index + cMemory * 9))
+                        {
+                            sequence[j] = index + cMemory * 9;
+                            j++;
+                        }
                     }
 
                 }
